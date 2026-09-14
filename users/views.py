@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 
@@ -23,11 +23,21 @@ def profile(request):
         user=request.user
     )
 
+    followers_count = Follow.objects.filter(
+        following=request.user
+    ).count()
+
+    following_count = Follow.objects.filter(
+        follower=request.user
+    ).count()
+
     return render(
         request,
         'users/profile.html',
         {
-            'profile': profile
+            'profile': profile,
+            'followers_count': followers_count,
+            'following_count': following_count
         }
     )
 
@@ -70,24 +80,68 @@ def edit_profile(request):
     )
 
 
+def get_friend_request(user1, user2):
+
+    return FriendRequest.objects.filter(
+        sender=user1,
+        receiver=user2
+    ).first() or FriendRequest.objects.filter(
+        sender=user2,
+        receiver=user1
+    ).first()
+
+
+def get_friend_status(viewer, target):
+
+    if viewer == target:
+
+        return {
+            'friend_request': None,
+            'is_friend': False,
+            'pending_outgoing': False,
+            'pending_incoming': False
+        }
+
+    friend_request = get_friend_request(
+        viewer,
+        target
+    )
+
+    is_friend = (
+        friend_request is not None
+        and friend_request.accepted
+    )
+
+    pending_outgoing = (
+        friend_request is not None
+        and not friend_request.accepted
+        and friend_request.sender == viewer
+    )
+
+    pending_incoming = (
+        friend_request is not None
+        and not friend_request.accepted
+        and friend_request.receiver == viewer
+    )
+
+    return {
+        'friend_request': friend_request,
+        'is_friend': is_friend,
+        'pending_outgoing': pending_outgoing,
+        'pending_incoming': pending_incoming
+    }
+
+
 def user_profile(request, username):
 
-    user = User.objects.get(
+    user = get_object_or_404(
+        User,
         username=username
     )
 
     profile, created = UserProfile.objects.get_or_create(
         user=user
     )
-
-    friend_request = None
-
-    if request.user.is_authenticated:
-
-        friend_request = FriendRequest.objects.filter(
-            sender=request.user,
-            receiver=user
-        ).first()
 
     followers_count = Follow.objects.filter(
         following=user
@@ -100,7 +154,22 @@ def user_profile(request, username):
     is_following = False
     target_follows_viewer = False
 
-    if request.user.is_authenticated:
+    friend_request = None
+    is_friend = False
+    pending_outgoing = False
+    pending_incoming = False
+
+    if request.user.is_authenticated and request.user != user:
+
+        friend_status = get_friend_status(
+            request.user,
+            user
+        )
+
+        friend_request = friend_status['friend_request']
+        is_friend = friend_status['is_friend']
+        pending_outgoing = friend_status['pending_outgoing']
+        pending_incoming = friend_status['pending_incoming']
 
         is_following = Follow.objects.filter(
             follower=request.user,
@@ -118,9 +187,16 @@ def user_profile(request, username):
         {
             'profile': profile,
             'profile_user': user,
+
             'friend_request': friend_request,
+
+            'is_friend': is_friend,
+            'pending_outgoing': pending_outgoing,
+            'pending_incoming': pending_incoming,
+
             'followers_count': followers_count,
             'following_count': following_count,
+
             'is_following': is_following,
             'target_follows_viewer': target_follows_viewer
         }
@@ -132,19 +208,20 @@ def send_friend_request(request, username):
     if not request.user.is_authenticated:
         return redirect('login')
 
-    receiver = User.objects.get(
+    receiver = get_object_or_404(
+        User,
         username=username
     )
 
     if receiver == request.user:
         return redirect('profile')
 
-    friend_request = FriendRequest.objects.filter(
-        sender=request.user,
-        receiver=receiver
-    ).first()
+    existing_request = get_friend_request(
+        request.user,
+        receiver
+    )
 
-    if friend_request:
+    if existing_request:
 
         return redirect(
             'user_profile',
@@ -175,7 +252,8 @@ def cancel_friend_request(request, username):
     if not request.user.is_authenticated:
         return redirect('login')
 
-    receiver = User.objects.get(
+    receiver = get_object_or_404(
+        User,
         username=username
     )
 
@@ -196,7 +274,8 @@ def follow_user(request, username):
     if not request.user.is_authenticated:
         return redirect('login')
 
-    target = User.objects.get(
+    target = get_object_or_404(
+        User,
         username=username
     )
 
@@ -230,6 +309,9 @@ def notifications(request):
 
     notifications = Notification.objects.filter(
         recipient=request.user
+    ).select_related(
+        'sender',
+        'friend_request'
     ).order_by(
         '-created_at'
     )
@@ -319,16 +401,144 @@ def explore(request):
         users = User.objects.filter(
             is_active=True,
             username__icontains=search
+        ).exclude(
+            id=request.user.id
         ).order_by(
             'username'
+        )
+
+    user_results = []
+
+    for user in users:
+
+        friend_status = get_friend_status(
+            request.user,
+            user
+        ) if request.user.is_authenticated else {
+            'friend_request': None,
+            'is_friend': False,
+            'pending_outgoing': False,
+            'pending_incoming': False
+        }
+
+        is_following = False
+        target_follows_viewer = False
+
+        if request.user.is_authenticated:
+
+            is_following = Follow.objects.filter(
+                follower=request.user,
+                following=user
+            ).exists()
+
+            target_follows_viewer = Follow.objects.filter(
+                follower=user,
+                following=request.user
+            ).exists()
+
+        user_results.append(
+            {
+                'user': user,
+                'profile': getattr(
+                    user,
+                    'userprofile',
+                    None
+                ),
+
+                'friend_request': friend_status[
+                    'friend_request'
+                ],
+
+                'is_friend': friend_status[
+                    'is_friend'
+                ],
+
+                'pending_outgoing': friend_status[
+                    'pending_outgoing'
+                ],
+
+                'pending_incoming': friend_status[
+                    'pending_incoming'
+                ],
+
+                'is_following': is_following,
+
+                'target_follows_viewer': target_follows_viewer
+            }
         )
 
     return render(
         request,
         'users/explore.html',
         {
-            'users': users,
+            'users': user_results,
             'search': search
+        }
+    )
+
+
+def followers(request, username=None):
+
+    if username:
+
+        target_user = get_object_or_404(
+            User,
+            username=username
+        )
+
+    else:
+
+        if not request.user.is_authenticated:
+            return redirect('login')
+
+        target_user = request.user
+
+    follower_users = User.objects.filter(
+        following__following=target_user
+    ).distinct().order_by(
+        'username'
+    )
+
+    return render(
+        request,
+        'users/followers.html',
+        {
+            'target_user': target_user,
+            'connection_users': follower_users,
+            'connection_type': 'Followers'
+        }
+    )
+
+
+def following(request, username=None):
+
+    if username:
+
+        target_user = get_object_or_404(
+            User,
+            username=username
+        )
+
+    else:
+
+        if not request.user.is_authenticated:
+            return redirect('login')
+
+        target_user = request.user
+
+    following_users = User.objects.filter(
+        following__follower=target_user
+    ).distinct().order_by(
+        'username'
+    )
+
+    return render(
+        request,
+        'users/following.html',
+        {
+            'target_user': target_user,
+            'connection_users': following_users,
+            'connection_type': 'Following'
         }
     )
 

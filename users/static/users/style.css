@@ -504,3 +504,347 @@ main p {
 
     vertical-align: middle;
 }
+.profile-card {
+    width: 650px;
+    max-width: calc(100% - 30px);
+    margin: 60px auto;
+    padding: 40px 30px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #f2dce5;
+    border-radius: 25px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(80, 20, 45, 0.12);
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 5px solid white;
+    box-shadow: 0 10px 30px rgba(181, 18, 79, 0.20);
+}
+
+.profile-image-placeholder {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #b5124f, #e52b69);
+    color: white;
+    font-size: 55px;
+    font-weight: bold;
+    box-shadow: 0 10px 30px rgba(181, 18, 79, 0.20);
+}
+
+.profile-card h1 {
+    margin-top: 20px;
+    margin-bottom: 5px;
+    font-size: 32px;
+}
+
+.profile-card h2 {
+    margin-top: 5px;
+    color: #8b6c77;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.profile-card p {
+    max-width: 500px;
+    margin: 25px auto;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 55px;
+    margin: 30px 0;
+}
+
+.profile-stat {
+    text-decoration: none;
+    color: #24171d;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: transform 0.2s ease;
+}
+
+.profile-stat:hover {
+    transform: translateY(-2px);
+}
+
+.profile-stat strong {
+    font-size: 24px;
+    color: #b5124f;
+}
+
+.profile-stat span {
+    color: #765f68;
+    font-size: 14px;
+}
+
+.profile-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 25px;
+}
+
+.friend-btn,
+.follow-btn,
+.message-btn {
+    padding: 12px 22px;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.friend-btn {
+    border: 1px solid #e7c0cf;
+    background: #fff2f6;
+    color: #b5124f;
+}
+
+.follow-btn {
+    border: 1px solid #d8c8ef;
+    background: #f7f1ff;
+    color: #7650a8;
+}
+
+.message-btn {
+    border: 1px solid #e4b8c8;
+    background: white;
+    color: #b5124f;
+}
+
+.explore-container {
+    width: 700px;
+    max-width: calc(100% - 30px);
+    margin: 60px auto;
+}
+
+.explore-container h1 {
+    text-align: center;
+}
+
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin: 30px 0;
+}
+
+.search-form input {
+    flex: 1;
+    padding: 14px 18px;
+    border: 1px solid #e6d2db;
+    border-radius: 30px;
+    outline: none;
+    font-size: 15px;
+}
+
+.search-form button {
+    border: none;
+    padding: 12px 24px;
+    border-radius: 30px;
+    background: linear-gradient(135deg, #b5124f, #e52b69);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.user-result-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 16px;
+    background: white;
+    border: 1px solid #f1dce4;
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(80, 20, 45, 0.07);
+}
+
+.user-result-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #24171d;
+    min-width: 0;
+}
+
+.search-profile-image,
+.search-profile-placeholder {
+    width: 55px;
+    height: 55px;
+    flex-shrink: 0;
+    border-radius: 50%;
+}
+
+.search-profile-image {
+    object-fit: cover;
+}
+
+.search-profile-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #b5124f, #e52b69);
+    color: white;
+    font-weight: bold;
+    font-size: 22px;
+}
+
+.user-result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.user-result-info strong {
+    color: #b5124f;
+}
+
+.user-result-info span {
+    color: #765f68;
+    font-size: 14px;
+}
+
+.search-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.search-actions .register-btn {
+    margin-top: 0;
+    padding: 10px 16px;
+    font-size: 13px;
+}
+
+.connections-container {
+    width: 600px;
+    max-width: calc(100% - 30px);
+    margin: 60px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(80, 20, 45, 0.10);
+}
+
+.connections-container h1 {
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.connections-container h2 {
+    text-align: center;
+    color: #8b6c77;
+    font-size: 17px;
+    font-weight: 500;
+    margin-bottom: 30px;
+}
+
+.connections-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.connection-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 13px;
+    text-decoration: none;
+    color: #24171d;
+    border-radius: 15px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.connection-user:hover {
+    background: #fff5f8;
+    transform: translateX(3px);
+}
+
+.connection-image,
+.connection-placeholder {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.connection-image {
+    object-fit: cover;
+}
+
+.connection-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #b5124f, #e52b69);
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.connection-user div:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.connection-user strong {
+    color: #b5124f;
+}
+
+.connection-user span {
+    color: #765f68;
+    font-size: 14px;
+}
+
+@media (max-width: 600px) {
+
+    .profile-card {
+        padding: 30px 20px;
+    }
+
+    .profile-stats {
+        gap: 30px;
+    }
+
+    .search-form {
+        flex-direction: column;
+    }
+
+    .search-form button {
+        width: 100%;
+    }
+
+    .user-result-card {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .search-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .connections-container {
+        padding: 25px 18px;
+    }
+
+}

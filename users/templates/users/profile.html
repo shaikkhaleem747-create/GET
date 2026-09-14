@@ -12,7 +12,9 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>GET - My Profile</title>
+    <title>
+        GET - {{ profile.user.username }}
+    </title>
 
     <link
         rel="stylesheet"
@@ -21,7 +23,6 @@
 
 </head>
 
-
 <body>
 
 <header class="navbar">
@@ -29,7 +30,6 @@
     <div class="logo">
         GET
     </div>
-
 
     <nav>
 
@@ -46,7 +46,6 @@
         </a>
 
         <a href="/notifications/">
-
             🔔 Notifications
 
             {% if unread_notification_count > 0 %}
@@ -97,41 +96,50 @@
             {{ profile.full_name }}
         </h1>
 
-
         <h2>
             @{{ profile.user.username }}
         </h2>
 
 
+        <!-- PROFILE STATS -->
+
         <div class="profile-stats">
 
-            <div class="profile-stat">
+            <a
+                href="{% url 'profile_followers' %}"
+                class="profile-stat"
+            >
 
                 <strong>
-                    {{ profile.user.followers.count }}
+                    {{ followers_count }}
                 </strong>
 
                 <span>
                     Followers
                 </span>
 
-            </div>
+            </a>
 
 
-            <div class="profile-stat">
+            <a
+                href="{% url 'profile_following' %}"
+                class="profile-stat"
+            >
 
                 <strong>
-                    {{ profile.user.following.count }}
+                    {{ following_count }}
                 </strong>
 
                 <span>
                     Following
                 </span>
 
-            </div>
+            </a>
 
         </div>
 
+
+        <!-- BIO -->
 
         {% if profile.bio %}
 
@@ -148,10 +156,12 @@
         {% endif %}
 
 
+        <!-- EDIT PROFILE -->
+
         <div class="profile-actions">
 
             <a
-                href="/profile/edit/"
+                href="{% url 'edit_profile' %}"
                 class="register-btn"
             >
                 Edit Profile

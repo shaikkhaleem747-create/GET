@@ -48,9 +48,33 @@ urlpatterns = [
     ),
 
     path(
+        'profile/followers/',
+        views.followers,
+        name='profile_followers'
+    ),
+
+    path(
+        'profile/following/',
+        views.following,
+        name='profile_following'
+    ),
+
+    path(
         'user/<str:username>/',
         views.user_profile,
         name='user_profile'
+    ),
+
+    path(
+        'user/<str:username>/followers/',
+        views.followers,
+        name='user_followers'
+    ),
+
+    path(
+        'user/<str:username>/following/',
+        views.following,
+        name='user_following'
     ),
 
     path(

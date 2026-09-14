@@ -1,0 +1,145 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        GET - Following
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+        GET
+    </div>
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/explore/">
+            Explore
+        </a>
+
+        <a href="#">
+            Messages
+        </a>
+
+        <a href="/notifications/">
+            🔔 Notifications
+
+            {% if unread_notification_count > 0 %}
+                <span class="notification-badge">
+                    {{ unread_notification_count }}
+                </span>
+            {% endif %}
+
+        </a>
+
+        <a href="/profile/">
+            Profile
+        </a>
+
+        <a href="/logout/">
+            Logout
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+    <div class="connections-container">
+
+        <h1>
+            Following
+        </h1>
+
+        <h2>
+            @{{ target_user.username }}
+        </h2>
+
+
+        <div class="connections-list">
+
+            {% for user in connection_users %}
+
+                <a
+                    href="{% url 'user_profile' user.username %}"
+                    class="connection-user"
+                >
+
+                    {% if user.userprofile.profile_image %}
+
+                        <img
+                            src="{{ user.userprofile.profile_image.url }}"
+                            alt="Profile picture"
+                            class="connection-image"
+                        >
+
+                    {% else %}
+
+                        <div class="connection-placeholder">
+                            {{ user.username|first|upper }}
+                        </div>
+
+                    {% endif %}
+
+
+                    <div>
+
+                        <strong>
+                            @{{ user.username }}
+                        </strong>
+
+                        {% if user.userprofile.full_name %}
+
+                            <span>
+                                {{ user.userprofile.full_name }}
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </a>
+
+            {% empty %}
+
+                <p>
+                    Not following anyone yet.
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

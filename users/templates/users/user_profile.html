@@ -49,11 +49,9 @@
             🔔 Notifications
 
             {% if unread_notification_count > 0 %}
-
                 <span class="notification-badge">
                     {{ unread_notification_count }}
                 </span>
-
             {% endif %}
 
         </a>
@@ -103,7 +101,10 @@
 
         <div class="profile-stats">
 
-            <div class="profile-stat">
+            <a
+                href="{% url 'user_followers' profile.user.username %}"
+                class="profile-stat"
+            >
 
                 <strong>
                     {{ followers_count }}
@@ -113,10 +114,13 @@
                     Followers
                 </span>
 
-            </div>
+            </a>
 
 
-            <div class="profile-stat">
+            <a
+                href="{% url 'user_following' profile.user.username %}"
+                class="profile-stat"
+            >
 
                 <strong>
                     {{ following_count }}
@@ -126,7 +130,7 @@
                     Following
                 </span>
 
-            </div>
+            </a>
 
         </div>
 
@@ -153,27 +157,32 @@
 
                 <!-- FRIEND STATUS -->
 
-                {% if friend_request %}
+                {% if is_friend %}
 
-                    {% if friend_request.accepted %}
+                    <button
+                        type="button"
+                        class="friend-btn"
+                    >
+                        ❤️ Friends
+                    </button>
 
-                        <button
-                            type="button"
-                            class="friend-btn"
-                        >
-                            ❤️ Friends
-                        </button>
+                {% elif pending_outgoing %}
 
-                    {% else %}
+                    <a
+                        href="{% url 'cancel_friend_request' profile.user.username %}"
+                        class="register-btn"
+                    >
+                        Requested
+                    </a>
 
-                        <a
-                            href="{% url 'cancel_friend_request' profile.user.username %}"
-                            class="register-btn"
-                        >
-                            Requested
-                        </a>
+                {% elif pending_incoming %}
 
-                    {% endif %}
+                    <a
+                        href="/notifications/"
+                        class="register-btn"
+                    >
+                        Respond to Request
+                    </a>
 
                 {% else %}
 
@@ -207,23 +216,17 @@
                         Follow Back
                     </a>
 
-                {% else %}
+                {% elif is_friend %}
 
-                    {% if friend_request and friend_request.accepted %}
-
-                        <a
-                            href="{% url 'follow_user' profile.user.username %}"
-                            class="register-btn"
-                        >
-                            Follow
-                        </a>
-
-                    {% endif %}
+                    <a
+                        href="{% url 'follow_user' profile.user.username %}"
+                        class="register-btn"
+                    >
+                        Follow
+                    </a>
 
                 {% endif %}
 
-
-                <!-- MESSAGE -->
 
                 <button
                     type="button"
