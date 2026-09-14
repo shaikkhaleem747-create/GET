@@ -1,0 +1,246 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        GET - {{ profile.user.username }}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+        GET
+    </div>
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/explore/">
+            Explore
+        </a>
+
+        <a href="#">
+            Messages
+        </a>
+
+        <a href="/notifications/">
+            🔔 Notifications
+
+            {% if unread_notification_count > 0 %}
+
+                <span class="notification-badge">
+                    {{ unread_notification_count }}
+                </span>
+
+            {% endif %}
+
+        </a>
+
+        <a href="/profile/">
+            Profile
+        </a>
+
+        <a href="/logout/">
+            Logout
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+    <div class="profile-card">
+
+        {% if profile.profile_image %}
+
+            <img
+                src="{{ profile.profile_image.url }}"
+                alt="Profile picture"
+                class="profile-image"
+            >
+
+        {% else %}
+
+            <div class="profile-image-placeholder">
+                {{ profile.user.username|first|upper }}
+            </div>
+
+        {% endif %}
+
+
+        <h1>
+            {{ profile.full_name }}
+        </h1>
+
+        <h2>
+            @{{ profile.user.username }}
+        </h2>
+
+
+        <div class="profile-stats">
+
+            <div class="profile-stat">
+
+                <strong>
+                    {{ followers_count }}
+                </strong>
+
+                <span>
+                    Followers
+                </span>
+
+            </div>
+
+
+            <div class="profile-stat">
+
+                <strong>
+                    {{ following_count }}
+                </strong>
+
+                <span>
+                    Following
+                </span>
+
+            </div>
+
+        </div>
+
+
+        {% if profile.bio %}
+
+            <p>
+                {{ profile.bio }}
+            </p>
+
+        {% else %}
+
+            <p>
+                No bio added yet.
+            </p>
+
+        {% endif %}
+
+
+        {% if request.user != profile.user %}
+
+            <div class="profile-actions">
+
+
+                <!-- FRIEND STATUS -->
+
+                {% if friend_request %}
+
+                    {% if friend_request.accepted %}
+
+                        <button
+                            type="button"
+                            class="friend-btn"
+                        >
+                            ❤️ Friends
+                        </button>
+
+                    {% else %}
+
+                        <a
+                            href="{% url 'cancel_friend_request' profile.user.username %}"
+                            class="register-btn"
+                        >
+                            Requested
+                        </a>
+
+                    {% endif %}
+
+                {% else %}
+
+                    <a
+                        href="{% url 'send_friend_request' profile.user.username %}"
+                        class="register-btn"
+                    >
+                        Add Friend
+                    </a>
+
+                {% endif %}
+
+
+                <!-- FOLLOW STATUS -->
+
+                {% if is_following %}
+
+                    <button
+                        type="button"
+                        class="follow-btn"
+                    >
+                        Following
+                    </button>
+
+                {% elif target_follows_viewer %}
+
+                    <a
+                        href="{% url 'follow_user' profile.user.username %}"
+                        class="register-btn"
+                    >
+                        Follow Back
+                    </a>
+
+                {% else %}
+
+                    {% if friend_request and friend_request.accepted %}
+
+                        <a
+                            href="{% url 'follow_user' profile.user.username %}"
+                            class="register-btn"
+                        >
+                            Follow
+                        </a>
+
+                    {% endif %}
+
+                {% endif %}
+
+
+                <!-- MESSAGE -->
+
+                <button
+                    type="button"
+                    class="message-btn"
+                >
+                    Message
+                </button>
+
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

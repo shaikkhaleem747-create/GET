@@ -1,0 +1,114 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GET - Edit Profile</title>
+
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+
+</head>
+
+
+<body>
+
+    <!-- Navigation -->
+
+    <header class="navbar">
+
+        <div class="logo">
+            GET
+        </div>
+
+        <nav>
+
+            <a href="/">
+                Home
+            </a>
+
+            <a href="/explore/">
+                Explore
+            </a>
+
+            <a href="/profile/">
+                Profile
+            </a>
+
+            <a href="#">
+                Messages
+            </a>
+
+            <a href="/logout/">
+                Logout
+            </a>
+
+        </nav>
+
+    </header>
+
+
+    <!-- Edit Profile -->
+
+    <main>
+
+        <div class="register-container">
+
+            <h1>
+                GET
+            </h1>
+
+            <h2>
+                Edit Profile
+            </h2>
+
+
+            <form
+                method="POST"
+                enctype="multipart/form-data"
+            >
+
+                {% csrf_token %}
+
+
+                {{ form.username }}
+
+                {{ form.email }}
+
+                {{ form.password }}
+
+                {{ form.full_name }}
+
+                {{ form.bio }}
+
+                {{ form.profile_image }}
+
+
+                <button type="submit">
+                    Save Changes
+                </button>
+
+            </form>
+
+
+            <p>
+
+                <a href="/profile/">
+                    Cancel
+                </a>
+
+            </p>
+
+        </div>
+
+    </main>
+
+
+</body>
+
+</html>

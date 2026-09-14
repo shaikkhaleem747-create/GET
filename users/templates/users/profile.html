@@ -1,0 +1,168 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>GET - My Profile</title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
+
+</head>
+
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+        GET
+    </div>
+
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/explore/">
+            Explore
+        </a>
+
+        <a href="#">
+            Messages
+        </a>
+
+        <a href="/notifications/">
+
+            🔔 Notifications
+
+            {% if unread_notification_count > 0 %}
+
+                <span class="notification-badge">
+                    {{ unread_notification_count }}
+                </span>
+
+            {% endif %}
+
+        </a>
+
+        <a href="/profile/">
+            Profile
+        </a>
+
+        <a href="/logout/">
+            Logout
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+    <div class="profile-card">
+
+        {% if profile.profile_image %}
+
+            <img
+                src="{{ profile.profile_image.url }}"
+                alt="Profile picture"
+                class="profile-image"
+            >
+
+        {% else %}
+
+            <div class="profile-image-placeholder">
+                {{ profile.user.username|first|upper }}
+            </div>
+
+        {% endif %}
+
+
+        <h1>
+            {{ profile.full_name }}
+        </h1>
+
+
+        <h2>
+            @{{ profile.user.username }}
+        </h2>
+
+
+        <div class="profile-stats">
+
+            <div class="profile-stat">
+
+                <strong>
+                    {{ profile.user.followers.count }}
+                </strong>
+
+                <span>
+                    Followers
+                </span>
+
+            </div>
+
+
+            <div class="profile-stat">
+
+                <strong>
+                    {{ profile.user.following.count }}
+                </strong>
+
+                <span>
+                    Following
+                </span>
+
+            </div>
+
+        </div>
+
+
+        {% if profile.bio %}
+
+            <p>
+                {{ profile.bio }}
+            </p>
+
+        {% else %}
+
+            <p>
+                No bio added yet.
+            </p>
+
+        {% endif %}
+
+
+        <div class="profile-actions">
+
+            <a
+                href="/profile/edit/"
+                class="register-btn"
+            >
+                Edit Profile
+            </a>
+
+        </div>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

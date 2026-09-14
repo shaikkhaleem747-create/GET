@@ -1,0 +1,42 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GET - Create Account</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+</head>
+
+<body>
+
+    <div class="register-container">
+
+        <h1>GET</h1>
+        <h2>Create Account</h2>
+
+        {% if success %}
+            <p class="success-message">{{ success }}</p>
+        {% endif %}
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <button type="submit">Create Account</button>
+
+        </form>
+
+        <p>
+            Already have an account?
+            <a href="/login">Login</a>
+        </p>
+
+    </div>
+
+</body>
+</html>

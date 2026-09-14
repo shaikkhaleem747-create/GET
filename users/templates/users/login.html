@@ -1,0 +1,51 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GET - Login</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+</head>
+
+<body>
+
+    <div class="register-container">
+
+        <h1>GET</h1>
+        <h2>Login</h2>
+
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <input
+                type="text"
+                name="username"
+                placeholder="Username"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                required
+            >
+
+            <button type="submit">Login</button>
+
+        </form>
+
+        <p>
+            Don't have an account?
+            <a href="/register/">Create Account</a>
+        </p>
+
+    </div>
+
+</body>
+</html>

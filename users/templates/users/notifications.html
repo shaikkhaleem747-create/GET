@@ -1,0 +1,142 @@
+{% load static %}
+{% load tz %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>GET - Notifications</title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
+
+</head>
+
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+        GET
+    </div>
+
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/explore/">
+            Explore
+        </a>
+
+        <a href="#">
+            Messages
+        </a>
+
+        <a href="/notifications/">
+
+            🔔 Notifications
+
+            {% if unread_notification_count > 0 %}
+
+                <span class="notification-badge">
+                    {{ unread_notification_count }}
+                </span>
+
+            {% endif %}
+
+        </a>
+
+        <a href="/profile/">
+            Profile
+        </a>
+
+        <a href="/logout/">
+            Logout
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+    <div class="profile-card">
+
+        <h1>
+            Notifications
+        </h1>
+
+
+        {% for notification in notifications %}
+
+            <div class="notification-card">
+
+                <p>
+                    {{ notification.message }}
+                </p>
+
+
+                <small>
+                    {{ notification.created_at|localtime|date:"h:i A" }}
+                </small>
+
+
+                {% if notification.notification_type == 'friend_request' %}
+
+                    {% if notification.friend_request and not notification.friend_request.accepted %}
+
+                        <div class="profile-actions">
+
+                            <a
+                                href="{% url 'accept_friend_request' notification.friend_request.id %}"
+                                class="register-btn"
+                            >
+                                Accept
+                            </a>
+
+
+                            <a
+                                href="{% url 'decline_friend_request' notification.friend_request.id %}"
+                                class="login-btn"
+                            >
+                                Decline
+                            </a>
+
+                        </div>
+
+                    {% endif %}
+
+                {% endif %}
+
+            </div>
+
+        {% empty %}
+
+            <p>
+                No notifications yet.
+            </p>
+
+        {% endfor %}
+
+    </div>
+
+</main>
+
+</body>
+
+</html>
