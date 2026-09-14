@@ -12,9 +12,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>
-        GET - Explore
-    </title>
+    <title>GET - Explore</title>
 
     <link
         rel="stylesheet"
@@ -33,19 +31,20 @@
 
     <nav>
 
-        <a href="/">
+        <a href="{% url 'home' %}">
             Home
         </a>
 
-        <a href="/explore/">
+        <a href="{% url 'explore' %}">
             Explore
         </a>
 
-        <a href="#">
+        <a href="{% url 'messages' %}">
             Messages
         </a>
 
-        <a href="/notifications/">
+        <a href="{% url 'notifications' %}">
+
             🔔 Notifications
 
             {% if unread_notification_count > 0 %}
@@ -58,11 +57,11 @@
 
         </a>
 
-        <a href="/profile/">
+        <a href="{% url 'profile' %}">
             Profile
         </a>
 
-        <a href="/logout/">
+        <a href="{% url 'logout' %}">
             Logout
         </a>
 
@@ -73,7 +72,7 @@
 
 <main>
 
-    <div class="explore-container">
+    <div class="profile-card">
 
         <h1>
             Explore
@@ -83,19 +82,19 @@
         <form
             method="GET"
             action="{% url 'explore' %}"
-            class="search-form"
         >
 
             <input
                 type="text"
-                name="search"
-                value="{{ search }}"
-                placeholder="Search username..."
+                name="q"
+                value="{{ query }}"
+                placeholder="Search people..."
                 autocomplete="off"
             >
 
             <button
                 type="submit"
+                class="register-btn"
             >
                 Search
             </button>
@@ -103,150 +102,152 @@
         </form>
 
 
-        {% if search %}
+        {% if query %}
 
-            <div class="search-results">
+            {% if user_results %}
 
-                {% for item in users %}
+                <div class="conversation-list">
 
-                    <div class="user-result-card">
+                    {% for result in user_results %}
 
-                        <a
-                            href="{% url 'user_profile' item.user.username %}"
-                            class="user-result-link"
-                        >
+                        <div class="conversation-card">
 
-                            {% if item.profile and item.profile.profile_image %}
+                            <a
+                                href="{% url 'user_profile' result.user.username %}"
+                                class="chat-user"
+                            >
 
-                                <img
-                                    src="{{ item.profile.profile_image.url }}"
-                                    alt="Profile picture"
-                                    class="search-profile-image"
-                                >
+                                {% if result.profile.profile_image %}
 
-                            {% else %}
+                                    <img
+                                        src="{{ result.profile.profile_image.url }}"
+                                        alt="Profile picture"
+                                        class="conversation-image"
+                                    >
 
-                                <div class="search-profile-placeholder">
-                                    {{ item.user.username|first|upper }}
-                                </div>
+                                {% else %}
 
-                            {% endif %}
+                                    <div class="conversation-placeholder">
 
+                                        {{ result.user.username|first|upper }}
 
-                            <div class="user-result-info">
-
-                                <strong>
-                                    @{{ item.user.username }}
-                                </strong>
-
-                                {% if item.profile and item.profile.full_name %}
-
-                                    <span>
-                                        {{ item.profile.full_name }}
-                                    </span>
+                                    </div>
 
                                 {% endif %}
 
+
+                                <div>
+
+                                    <strong>
+                                        @{{ result.user.username }}
+                                    </strong>
+
+                                    {% if result.profile.full_name %}
+
+                                        <span>
+                                            {{ result.profile.full_name }}
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </a>
+
+
+                            <div class="profile-actions">
+
+                                {% if result.is_friend %}
+
+                                    <button
+                                        type="button"
+                                        class="friend-btn"
+                                    >
+                                        ❤️ Friends
+                                    </button>
+
+                                {% elif result.pending_outgoing %}
+
+                                    <a
+                                        href="{% url 'cancel_friend_request' result.user.username %}"
+                                        class="register-btn"
+                                    >
+                                        Requested
+                                    </a>
+
+                                {% elif result.pending_incoming %}
+
+                                    <a
+                                        href="{% url 'notifications' %}"
+                                        class="register-btn"
+                                    >
+                                        Respond
+                                    </a>
+
+                                {% else %}
+
+                                    <a
+                                        href="{% url 'send_friend_request' result.user.username %}"
+                                        class="register-btn"
+                                    >
+                                        Add Friend
+                                    </a>
+
+                                {% endif %}
+
+
+                                <a
+                                    href="{% url 'chat' result.user.username %}"
+                                    class="message-btn"
+                                >
+                                    💬 Message
+                                </a>
+
                             </div>
-
-                        </a>
-
-
-                        <div class="search-actions">
-
-
-                            <!-- FRIEND -->
-
-                            {% if item.is_friend %}
-
-                                <button
-                                    type="button"
-                                    class="friend-btn"
-                                >
-                                    ❤️ Friends
-                                </button>
-
-                            {% elif item.pending_outgoing %}
-
-                                <a
-                                    href="{% url 'cancel_friend_request' item.user.username %}"
-                                    class="register-btn"
-                                >
-                                    Requested
-                                </a>
-
-                            {% elif item.pending_incoming %}
-
-                                <a
-                                    href="/notifications/"
-                                    class="register-btn"
-                                >
-                                    Respond
-                                </a>
-
-                            {% else %}
-
-                                <a
-                                    href="{% url 'send_friend_request' item.user.username %}"
-                                    class="register-btn"
-                                >
-                                    Add Friend
-                                </a>
-
-                            {% endif %}
-
-
-                            <!-- FOLLOW -->
-
-                            {% if item.is_following %}
-
-                                <button
-                                    type="button"
-                                    class="follow-btn"
-                                >
-                                    Following
-                                </button>
-
-                            {% elif item.target_follows_viewer %}
-
-                                <a
-                                    href="{% url 'follow_user' item.user.username %}"
-                                    class="register-btn"
-                                >
-                                    Follow Back
-                                </a>
-
-                            {% elif item.is_friend %}
-
-                                <a
-                                    href="{% url 'follow_user' item.user.username %}"
-                                    class="register-btn"
-                                >
-                                    Follow
-                                </a>
-
-                            {% endif %}
-
 
                         </div>
 
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-messages">
+
+                    <div class="empty-message-icon">
+                        🔎
                     </div>
 
-                {% empty %}
+                    <h2>
+                        No people found
+                    </h2>
 
                     <p>
-                        No users found.
+                        Try another username.
                     </p>
 
-                {% endfor %}
+                </div>
 
-            </div>
+            {% endif %}
 
         {% else %}
 
-            <p>
-                Search for someone to connect with ❤️
-            </p>
+            <div class="empty-messages">
+
+                <div class="empty-message-icon">
+                    🔎
+                </div>
+
+                <h2>
+                    Find People
+                </h2>
+
+                <p>
+                    Search for someone by username.
+                </p>
+
+            </div>
 
         {% endif %}
 

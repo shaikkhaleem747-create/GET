@@ -1,0 +1,271 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        GET - Messages
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+        GET
+    </div>
+
+    <nav>
+
+        <a href="{% url 'home' %}">
+            Home
+        </a>
+
+        <a href="{% url 'explore' %}">
+            Explore
+        </a>
+
+        <a href="{% url 'messages' %}">
+
+            Messages
+
+            {% if unread_message_people_count > 0 %}
+
+                <span class="notification-badge">
+                    {{ unread_message_people_count }}
+                </span>
+
+            {% endif %}
+
+        </a>
+
+        <a href="{% url 'notifications' %}">
+
+            🔔 Notifications
+
+            {% if unread_notification_count > 0 %}
+
+                <span class="notification-badge">
+                    {{ unread_notification_count }}
+                </span>
+
+            {% endif %}
+
+        </a>
+
+        <a href="{% url 'profile' %}">
+            Profile
+        </a>
+
+        <a href="{% url 'logout' %}">
+            Logout
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+    <div class="messages-container">
+
+        <div class="messages-title-row">
+
+            <h1>
+                💬 Messages
+            </h1>
+
+            <a
+                href="{% url 'create_group' %}"
+                class="register-btn"
+            >
+                ＋ Group
+            </a>
+
+        </div>
+
+
+        {% if conversation_users or group_conversations %}
+
+
+            <div class="conversation-list">
+
+
+                {% for conversation in conversation_users %}
+
+                    <a
+                        href="{% url 'chat' conversation.user.username %}"
+                        class="conversation-card"
+                    >
+
+                        {% if conversation.profile.profile_image %}
+
+                            <img
+                                src="{{ conversation.profile.profile_image.url }}"
+                                alt="Profile picture"
+                                class="conversation-image"
+                            >
+
+                        {% else %}
+
+                            <div class="conversation-placeholder">
+
+                                {{ conversation.user.username|first|upper }}
+
+                            </div>
+
+                        {% endif %}
+
+
+                        <div class="conversation-info">
+
+                            <strong>
+                                @{{ conversation.user.username }}
+                            </strong>
+
+
+                            {% if conversation.profile.full_name %}
+
+                                <span>
+                                    {{ conversation.profile.full_name }}
+                                </span>
+
+                            {% endif %}
+
+
+                            {% if conversation.last_message %}
+
+                                <p>
+                                    {{ conversation.last_message.message|truncatechars:45 }}
+                                </p>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        {% if conversation.unread_count > 0 %}
+
+                            <span class="message-unread-dot">
+                            </span>
+
+                        {% endif %}
+
+                    </a>
+
+                {% endfor %}
+
+
+                {% for item in group_conversations %}
+
+                    <a
+                        href="{% url 'group_chat' item.group.id %}"
+                        class="conversation-card"
+                    >
+
+                        <div class="group-avatar">
+                            👥
+                        </div>
+
+
+                        <div class="conversation-info">
+
+                            <strong>
+                                {{ item.group.name }}
+                            </strong>
+
+                            <span>
+                                Group ·
+                                {{ item.group.members.count }}
+                                members
+                            </span>
+
+
+                            {% if item.last_message %}
+
+                                <p>
+                                    {{ item.last_message.message|truncatechars:45 }}
+                                </p>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        {% if item.unread_count > 0 %}
+
+                            <span class="message-unread-dot">
+                            </span>
+
+                        {% endif %}
+
+                    </a>
+
+                {% endfor %}
+
+
+            </div>
+
+
+        {% else %}
+
+            <div class="empty-messages">
+
+                <div class="empty-message-icon">
+                    💬
+                </div>
+
+                <h2>
+                    No friends messages yet
+                </h2>
+
+                <p>
+                    Start a conversation with someone you know ❤️
+                </p>
+
+                <div class="profile-actions">
+
+                    <a
+                        href="{% url 'explore' %}"
+                        class="register-btn"
+                    >
+                        Find People
+                    </a>
+
+                    <a
+                        href="{% url 'create_group' %}"
+                        class="message-btn"
+                    >
+                        ＋ Create Group
+                    </a>
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

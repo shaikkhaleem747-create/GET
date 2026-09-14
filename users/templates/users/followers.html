@@ -33,34 +33,37 @@
 
     <nav>
 
-        <a href="/">
+        <a href="{% url 'home' %}">
             Home
         </a>
 
-        <a href="/explore/">
+        <a href="{% url 'explore' %}">
             Explore
         </a>
 
-        <a href="#">
+        <a href="{% url 'messages' %}">
             Messages
         </a>
 
-        <a href="/notifications/">
+        <a href="{% url 'notifications' %}">
+
             🔔 Notifications
 
             {% if unread_notification_count > 0 %}
+
                 <span class="notification-badge">
                     {{ unread_notification_count }}
                 </span>
+
             {% endif %}
 
         </a>
 
-        <a href="/profile/">
+        <a href="{% url 'profile' %}">
             Profile
         </a>
 
-        <a href="/logout/">
+        <a href="{% url 'logout' %}">
             Logout
         </a>
 
@@ -71,70 +74,84 @@
 
 <main>
 
-    <div class="connections-container">
+    <div class="profile-card">
 
         <h1>
             Followers
         </h1>
 
-        <h2>
+        <p>
             @{{ target_user.username }}
-        </h2>
+        </p>
 
 
-        <div class="connections-list">
+        {% if follower_users %}
 
-            {% for user in connection_users %}
+            <div class="conversation-list">
 
-                <a
-                    href="{% url 'user_profile' user.username %}"
-                    class="connection-user"
-                >
+                {% for user in follower_users %}
 
-                    {% if user.userprofile.profile_image %}
+                    <a
+                        href="{% url 'user_profile' user.username %}"
+                        class="conversation-card"
+                    >
 
-                        <img
-                            src="{{ user.userprofile.profile_image.url }}"
-                            alt="Profile picture"
-                            class="connection-image"
-                        >
+                        {% if user.userprofile.profile_image %}
 
-                    {% else %}
+                            <img
+                                src="{{ user.userprofile.profile_image.url }}"
+                                alt="Profile picture"
+                                class="conversation-image"
+                            >
 
-                        <div class="connection-placeholder">
-                            {{ user.username|first|upper }}
-                        </div>
+                        {% else %}
 
-                    {% endif %}
+                            <div class="conversation-placeholder">
 
+                                {{ user.username|first|upper }}
 
-                    <div>
-
-                        <strong>
-                            @{{ user.username }}
-                        </strong>
-
-                        {% if user.userprofile.full_name %}
-
-                            <span>
-                                {{ user.userprofile.full_name }}
-                            </span>
+                            </div>
 
                         {% endif %}
 
-                    </div>
 
-                </a>
+                        <div class="conversation-info">
 
-            {% empty %}
+                            <strong>
+                                @{{ user.username }}
+                            </strong>
 
-                <p>
-                    No followers yet.
-                </p>
+                            {% if user.userprofile.full_name %}
 
-            {% endfor %}
+                                <span>
+                                    {{ user.userprofile.full_name }}
+                                </span>
 
-        </div>
+                            {% endif %}
+
+                        </div>
+
+                    </a>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-messages">
+
+                <div class="empty-message-icon">
+                    👥
+                </div>
+
+                <h2>
+                    No followers yet
+                </h2>
+
+            </div>
+
+        {% endif %}
 
     </div>
 

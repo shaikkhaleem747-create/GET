@@ -18,129 +18,65 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-
 from users import views
 
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
 
+    path('', views.home, name='home'),
+
+    path('profile/', views.profile, name='profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('profile/followers/', views.followers, name='profile_followers'),
+    path('profile/following/', views.following, name='profile_following'),
+
+    path('user/<str:username>/', views.user_profile, name='user_profile'),
+    path('user/<str:username>/followers/', views.followers, name='user_followers'),
+    path('user/<str:username>/following/', views.following, name='user_following'),
+    path('user/<str:username>/add-friend/', views.send_friend_request, name='send_friend_request'),
+    path('user/<str:username>/cancel-friend/', views.cancel_friend_request, name='cancel_friend_request'),
+    path('user/<str:username>/follow/', views.follow_user, name='follow_user'),
+
+    # Messages
+    path('messages/', views.messages, name='messages'),
+
+    # Group chat URLs MUST come before private chat
+    path('messages/create-group/', views.create_group, name='create_group'),
+    path('messages/group/<int:group_id>/', views.group_chat, name='group_chat'),
     path(
-        'admin/',
-        admin.site.urls
+        'messages/group/<int:group_id>/add/<str:username>/',
+        views.add_group_member,
+        name='add_group_member'
     ),
 
-    path(
-        '',
-        views.home,
-        name='home'
-    ),
+    # Private chat
+    path('messages/<str:username>/', views.chat, name='chat'),
 
-    path(
-        'profile/',
-        views.profile,
-        name='profile'
-    ),
-
-    path(
-        'profile/edit/',
-        views.edit_profile,
-        name='edit_profile'
-    ),
-
-    path(
-        'profile/followers/',
-        views.followers,
-        name='profile_followers'
-    ),
-
-    path(
-        'profile/following/',
-        views.following,
-        name='profile_following'
-    ),
-
-    path(
-        'user/<str:username>/',
-        views.user_profile,
-        name='user_profile'
-    ),
-
-    path(
-        'user/<str:username>/followers/',
-        views.followers,
-        name='user_followers'
-    ),
-
-    path(
-        'user/<str:username>/following/',
-        views.following,
-        name='user_following'
-    ),
-
-    path(
-        'user/<str:username>/add-friend/',
-        views.send_friend_request,
-        name='send_friend_request'
-    ),
-
-    path(
-        'user/<str:username>/cancel-friend/',
-        views.cancel_friend_request,
-        name='cancel_friend_request'
-    ),
-
-    path(
-        'user/<str:username>/follow/',
-        views.follow_user,
-        name='follow_user'
-    ),
-
-    path(
-        'notifications/',
-        views.notifications,
-        name='notifications'
-    ),
-
+    # Notifications
+    path('notifications/', views.notifications, name='notifications'),
     path(
         'notifications/<int:request_id>/accept/',
         views.accept_friend_request,
         name='accept_friend_request'
     ),
-
     path(
         'notifications/<int:request_id>/decline/',
         views.decline_friend_request,
         name='decline_friend_request'
     ),
 
-    path(
-        'explore/',
-        views.explore,
-        name='explore'
-    ),
+    # Explore
+    path('explore/', views.explore, name='explore'),
 
-    path(
-        'register/',
-        views.register,
-        name='register'
-    ),
-
-    path(
-        'login/',
-        views.user_login,
-        name='login'
-    ),
-
-    path(
-        'logout/',
-        views.user_logout,
-        name='logout'
-    ),
+    # Authentication
+    path('register/', views.register, name='register'),
+    path('login/', views.user_login, name='login'),
+    path('logout/', views.user_logout, name='logout'),
 ]
 
 
 if settings.DEBUG:
-
     urlpatterns += static(
         settings.MEDIA_URL,
         document_root=settings.MEDIA_ROOT

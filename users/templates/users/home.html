@@ -7,110 +7,125 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <title>GET</title>
+    <title>GET - Home</title>
 
-    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
 
 </head>
 
 <body>
 
-    <!-- Navigation -->
+<header class="navbar">
 
-    <header class="navbar">
+    <div class="logo">
+        GET
+    </div>
 
-        <div class="logo">
-            GET
-        </div>
+    <nav>
 
-        <nav>
+        <a href="{% url 'home' %}">
+            Home
+        </a>
 
-            {% if user.is_authenticated %}
+        <a href="{% url 'explore' %}">
+            Explore
+        </a>
 
-                <a href="/">
-                    Home
-                </a>
+        <a href="{% url 'messages' %}">
+            Messages
+        </a>
 
-                <a href="/explore/">
-                    Explore
-                </a>
+        <a href="{% url 'notifications' %}">
+            🔔 Notifications
 
-                <a href="#">
-                    Messages
-                </a>
+            {% if unread_notification_count > 0 %}
 
-                <a href="/notifications/">
-                    🔔 Notifications
-
-                    {% if unread_notification_count > 0 %}
-
-                        <span class="notification-badge">
-                            {{ unread_notification_count }}
-                        </span>
-
-                    {% endif %}
-
-                </a>
-
-                <a href="/profile/">
-                    Profile
-                </a>
-
-                <a href="/logout/">
-                    Logout
-                </a>
-
-            {% else %}
-
-                <a href="/login/">
-                    Login
-                </a>
-
-                <a href="/register/">
-                    Create Account
-                </a>
+                <span class="notification-badge">
+                    {{ unread_notification_count }}
+                </span>
 
             {% endif %}
 
-        </nav>
+        </a>
 
-    </header>
+        <a href="{% url 'profile' %}">
+            Profile
+        </a>
+
+        <a href="{% url 'logout' %}">
+            Logout
+        </a>
+
+    </nav>
+
+</header>
 
 
-    <!-- Home -->
+<main>
 
-    <main>
+    <div class="profile-card">
 
         <h1>
-            Welcome to GET, {{ request.user.username }}
+            Welcome to GET ❤️
         </h1>
 
         <p>
-            Connect. Meet. Share.
+            Connect with people, make friends and share your world.
         </p>
 
+        {% if request.user.is_authenticated %}
 
-        {% if not user.is_authenticated %}
+            <div class="profile-actions">
 
-            <a
-                href="/register/"
-                class="register-btn"
-            >
-                Create Account
-            </a>
+                <a
+                    href="{% url 'explore' %}"
+                    class="register-btn"
+                >
+                    Explore People
+                </a>
 
-            <a
-                href="/login/"
-                class="login-btn"
-            >
-                Login
-            </a>
+                <a
+                    href="{% url 'messages' %}"
+                    class="message-btn"
+                >
+                    💬 Messages
+                </a>
+
+            </div>
+
+        {% else %}
+
+            <div class="profile-actions">
+
+                <a
+                    href="{% url 'login' %}"
+                    class="login-btn"
+                >
+                    Login
+                </a>
+
+                <a
+                    href="{% url 'register' %}"
+                    class="register-btn"
+                >
+                    Register
+                </a>
+
+            </div>
 
         {% endif %}
 
-    </main>
+    </div>
+
+</main>
 
 </body>
 

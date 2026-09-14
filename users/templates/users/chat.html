@@ -1,0 +1,239 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        GET - @{{ other_user.username }}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+        GET
+    </div>
+
+    <nav>
+
+        <a href="{% url 'home' %}">
+            Home
+        </a>
+
+        <a href="{% url 'explore' %}">
+            Explore
+        </a>
+
+        <a href="{% url 'messages' %}">
+
+            Messages
+
+            {% if unread_message_people_count > 0 %}
+
+                <span class="notification-badge">
+                    {{ unread_message_people_count }}
+                </span>
+
+            {% endif %}
+
+        </a>
+
+        <a href="{% url 'notifications' %}">
+
+            🔔 Notifications
+
+            {% if unread_notification_count > 0 %}
+
+                <span class="notification-badge">
+                    {{ unread_notification_count }}
+                </span>
+
+            {% endif %}
+
+        </a>
+
+        <a href="{% url 'profile' %}">
+            Profile
+        </a>
+
+        <a href="{% url 'logout' %}">
+            Logout
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+    <div class="chat-container">
+
+
+        <div class="chat-header">
+
+            <a
+                href="{% url 'messages' %}"
+                class="chat-back"
+            >
+                ←
+            </a>
+
+
+            <a
+                href="{% url 'user_profile' other_user.username %}"
+                class="chat-user"
+            >
+
+                {% if other_profile.profile_image %}
+
+                    <img
+                        src="{{ other_profile.profile_image.url }}"
+                        alt="Profile picture"
+                        class="chat-profile-image"
+                    >
+
+                {% else %}
+
+                    <div class="chat-profile-placeholder">
+
+                        {{ other_user.username|first|upper }}
+
+                    </div>
+
+                {% endif %}
+
+
+                <div>
+
+                    <strong>
+                        @{{ other_user.username }}
+                    </strong>
+
+                    {% if other_profile.full_name %}
+
+                        <span>
+                            {{ other_profile.full_name }}
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </a>
+
+        </div>
+
+
+        <div class="chat-messages">
+
+            {% for item in chat_messages %}
+
+                {% if item.sender == request.user %}
+
+                    <div class="message-row sent">
+
+                        <div class="message-bubble sent-bubble">
+
+                            <p>
+                                {{ item.message }}
+                            </p>
+
+                            <small>
+                                {{ item.created_at|date:"h:i A" }}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="message-row received">
+
+                        <div class="message-bubble received-bubble">
+
+                            <p>
+                                {{ item.message }}
+                            </p>
+
+                            <small>
+                                {{ item.created_at|date:"h:i A" }}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            {% empty %}
+
+                <div class="empty-chat">
+
+                    <div class="empty-message-icon">
+                        ❤️
+                    </div>
+
+                    <h2>
+                        Start your conversation
+                    </h2>
+
+                    <p>
+                        Send your first message to
+                        @{{ other_user.username }}
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <form
+            method="POST"
+            class="chat-input-form"
+        >
+
+            {% csrf_token %}
+
+            <input
+                type="text"
+                name="message"
+                placeholder="Write a message..."
+                maxlength="2000"
+                autocomplete="off"
+                required
+            >
+
+            <button type="submit">
+                Send
+            </button>
+
+        </form>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

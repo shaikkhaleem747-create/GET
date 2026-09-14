@@ -1,9 +1,20 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import UserProfileForm
-from .models import UserProfile, Notification, FriendRequest, Follow
+from .models import (
+    ChatGroup,
+    FriendRequest,
+    Follow,
+    GroupMember,
+    GroupMessage,
+    GroupMessageRead,
+    Message,
+    Notification,
+    UserProfile
+)
 
 
 def home(request):
@@ -68,7 +79,11 @@ def edit_profile(request):
     else:
 
         form = UserProfileForm(
-            instance=profile
+            instance=profile,
+            initial={
+                'username': request.user.username,
+                'email': request.user.email
+            }
         )
 
     return render(
@@ -83,101 +98,90 @@ def edit_profile(request):
 def get_friend_request(user1, user2):
 
     return FriendRequest.objects.filter(
-        sender=user1,
-        receiver=user2
-    ).first() or FriendRequest.objects.filter(
-        sender=user2,
-        receiver=user1
+        Q(
+            sender=user1,
+            receiver=user2
+        ) |
+        Q(
+            sender=user2,
+            receiver=user1
+        )
     ).first()
 
 
-def get_friend_status(viewer, target):
+def get_friend_status(user1, user2):
 
-    if viewer == target:
+    request_obj = get_friend_request(
+        user1,
+        user2
+    )
+
+    if request_obj is None:
 
         return {
-            'friend_request': None,
             'is_friend': False,
             'pending_outgoing': False,
             'pending_incoming': False
         }
 
-    friend_request = get_friend_request(
-        viewer,
-        target
-    )
+    if request_obj.accepted:
 
-    is_friend = (
-        friend_request is not None
-        and friend_request.accepted
-    )
-
-    pending_outgoing = (
-        friend_request is not None
-        and not friend_request.accepted
-        and friend_request.sender == viewer
-    )
-
-    pending_incoming = (
-        friend_request is not None
-        and not friend_request.accepted
-        and friend_request.receiver == viewer
-    )
+        return {
+            'is_friend': True,
+            'pending_outgoing': False,
+            'pending_incoming': False
+        }
 
     return {
-        'friend_request': friend_request,
-        'is_friend': is_friend,
-        'pending_outgoing': pending_outgoing,
-        'pending_incoming': pending_incoming
+        'is_friend': request_obj.sender == user1,
+        'pending_outgoing': request_obj.sender == user1,
+        'pending_incoming': request_obj.receiver == user1
     }
 
 
 def user_profile(request, username):
 
-    user = get_object_or_404(
+    target_user = get_object_or_404(
         User,
         username=username
     )
 
     profile, created = UserProfile.objects.get_or_create(
-        user=user
+        user=target_user
     )
 
     followers_count = Follow.objects.filter(
-        following=user
+        following=target_user
     ).count()
 
     following_count = Follow.objects.filter(
-        follower=user
+        follower=target_user
     ).count()
 
-    is_following = False
-    target_follows_viewer = False
-
-    friend_request = None
     is_friend = False
     pending_outgoing = False
     pending_incoming = False
+    is_following = False
+    target_follows_viewer = False
 
-    if request.user.is_authenticated and request.user != user:
+    if request.user.is_authenticated:
 
         friend_status = get_friend_status(
             request.user,
-            user
+            target_user
         )
 
-        friend_request = friend_status['friend_request']
         is_friend = friend_status['is_friend']
         pending_outgoing = friend_status['pending_outgoing']
         pending_incoming = friend_status['pending_incoming']
 
         is_following = Follow.objects.filter(
             follower=request.user,
-            following=user
+            following=target_user
         ).exists()
 
         target_follows_viewer = Follow.objects.filter(
-            follower=user,
+            follower=target_user,
             following=request.user
         ).exists()
 
@@ -186,17 +190,11 @@ def user_profile(request, username):
         'users/user_profile.html',
         {
             'profile': profile,
-            'profile_user': user,
-
-            'friend_request': friend_request,
-
+            'followers_count': followers_count,
+            'following_count': following_count,
             'is_friend': is_friend,
             'pending_outgoing': pending_outgoing,
             'pending_incoming': pending_incoming,
-
-            'followers_count': followers_count,
-            'following_count': following_count,
-
             'is_following': is_following,
             'target_follows_viewer': target_follows_viewer
         }
@@ -214,32 +212,36 @@ def send_friend_request(request, username):
     )
 
     if receiver == request.user:
-        return redirect('profile')
+        return redirect(
+            'user_profile',
+            username=username
+        )
 
     existing_request = get_friend_request(
         request.user,
         receiver
     )
 
-    if existing_request:
+    if existing_request is None:
 
-        return redirect(
-            'user_profile',
-            username=username
+        friend_request = FriendRequest.objects.create(
+            sender=request.user,
+            receiver=receiver
         )
 
-    friend_request = FriendRequest.objects.create(
-        sender=request.user,
-        receiver=receiver
-    )
-
-    Notification.objects.create(
-        recipient=receiver,
-        sender=request.user,
-        notification_type='friend_request',
-        message=f'@{request.user.username} sent you a friend request',
-        friend_request=friend_request
-    )
+        Notification.objects.create(
+            recipient=receiver,
+            sender=request.user,
+            notification_type='friend_request',
+            message=(
+                f'@{request.user.username} '
+                f'sent you a friend request'
+            ),
+            friend_request=friend_request,
+            target_url=(
+                f'/user/{request.user.username}/'
+            )
+        )
 
     return redirect(
         'user_profile',
@@ -274,27 +276,18 @@ def follow_user(request, username):
     if not request.user.is_authenticated:
         return redirect('login')
 
-    target = get_object_or_404(
+    target_user = get_object_or_404(
         User,
         username=username
     )
 
-    if target == request.user:
+    if target_user == request.user:
         return redirect('profile')
 
-    follow, created = Follow.objects.get_or_create(
+    Follow.objects.get_or_create(
         follower=request.user,
-        following=target
+        following=target_user
     )
-
-    if created:
-
-        Notification.objects.create(
-            recipient=target,
-            sender=request.user,
-            notification_type='follow',
-            message=f'You have a new follower: @{request.user.username}'
-        )
 
     return redirect(
         'user_profile',
@@ -307,7 +300,7 @@ def notifications(request):
     if not request.user.is_authenticated:
         return redirect('login')
 
-    notifications = Notification.objects.filter(
+    notifications_list = Notification.objects.filter(
         recipient=request.user
     ).select_related(
         'sender',
@@ -327,7 +320,7 @@ def notifications(request):
         request,
         'users/notifications.html',
         {
-            'notifications': notifications
+            'notifications': notifications_list
         }
     )
 
@@ -335,16 +328,13 @@ def notifications(request):
 def accept_friend_request(request, request_id):
 
     if not request.user.is_authenticated:
-        return redirect('notifications')
+        return redirect('login')
 
-    friend_request = FriendRequest.objects.filter(
+    friend_request = get_object_or_404(
+        FriendRequest,
         id=request_id,
-        receiver=request.user,
-        accepted=False
-    ).first()
-
-    if friend_request is None:
-        return redirect('notifications')
+        receiver=request.user
+    )
 
     friend_request.accepted = True
     friend_request.save()
@@ -354,77 +344,75 @@ def accept_friend_request(request, request_id):
         following=friend_request.receiver
     )
 
+    Follow.objects.get_or_create(
+        follower=friend_request.receiver,
+        following=friend_request.sender
+    )
+
     Notification.objects.create(
         recipient=friend_request.sender,
         sender=request.user,
         notification_type='friend_accepted',
-        message=f'@{request.user.username} accepted your friend request'
+        message=(
+            f'@{request.user.username} '
+            f'accepted your friend request'
+        ),
+        target_url=(
+            f'/user/{request.user.username}/'
+        )
     )
 
-    return redirect(
-        'notifications'
-    )
+    return redirect('notifications')
 
 
 def decline_friend_request(request, request_id):
 
     if not request.user.is_authenticated:
-        return redirect('notifications')
+        return redirect('login')
 
-    friend_request = FriendRequest.objects.filter(
+    friend_request = get_object_or_404(
+        FriendRequest,
         id=request_id,
-        receiver=request.user,
-        accepted=False
-    ).first()
-
-    if friend_request is None:
-        return redirect('notifications')
+        receiver=request.user
+    )
 
     friend_request.delete()
 
-    return redirect(
-        'notifications'
-    )
+    return redirect('notifications')
 
 
 def explore(request):
 
-    search = request.GET.get(
-        'search',
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    query = request.GET.get(
+        'q',
         ''
     ).strip()
 
-    users = User.objects.none()
+    user_results = []
 
-    if search:
+    if query:
 
         users = User.objects.filter(
-            is_active=True,
-            username__icontains=search
+            username__icontains=query
         ).exclude(
             id=request.user.id
         ).order_by(
             'username'
         )
 
-    user_results = []
+        for user in users:
 
-    for user in users:
+            profile, created = UserProfile.objects.get_or_create(
+                user=user
+            )
 
-        friend_status = get_friend_status(
-            request.user,
-            user
-        ) if request.user.is_authenticated else {
-            'friend_request': None,
-            'is_friend': False,
-            'pending_outgoing': False,
-            'pending_incoming': False
-        }
-
-        is_following = False
-        target_follows_viewer = False
-
-        if request.user.is_authenticated:
+            friend_status = get_friend_status(
+                request.user,
+                user
+            )
 
             is_following = Follow.objects.filter(
                 follower=request.user,
@@ -436,43 +424,28 @@ def explore(request):
                 following=request.user
             ).exists()
 
-        user_results.append(
-            {
-                'user': user,
-                'profile': getattr(
-                    user,
-                    'userprofile',
-                    None
-                ),
-
-                'friend_request': friend_status[
-                    'friend_request'
-                ],
-
-                'is_friend': friend_status[
-                    'is_friend'
-                ],
-
-                'pending_outgoing': friend_status[
-                    'pending_outgoing'
-                ],
-
-                'pending_incoming': friend_status[
-                    'pending_incoming'
-                ],
-
-                'is_following': is_following,
-
-                'target_follows_viewer': target_follows_viewer
-            }
-        )
+            user_results.append(
+                {
+                    'user': user,
+                    'profile': profile,
+                    'is_friend': friend_status['is_friend'],
+                    'pending_outgoing': friend_status[
+                        'pending_outgoing'
+                    ],
+                    'pending_incoming': friend_status[
+                        'pending_incoming'
+                    ],
+                    'is_following': is_following,
+                    'target_follows_viewer': target_follows_viewer
+                }
+            )
 
     return render(
         request,
         'users/explore.html',
         {
-            'users': user_results,
-            'search': search
+            'user_results': user_results,
+            'query': query
         }
     )
 
@@ -504,8 +477,7 @@ def followers(request, username=None):
         'users/followers.html',
         {
             'target_user': target_user,
-            'connection_users': follower_users,
-            'connection_type': 'Followers'
+            'follower_users': follower_users
         }
     )
 
@@ -527,7 +499,7 @@ def following(request, username=None):
         target_user = request.user
 
     following_users = User.objects.filter(
-        following__follower=target_user
+        followers__follower=target_user
     ).distinct().order_by(
         'username'
     )
@@ -537,81 +509,533 @@ def following(request, username=None):
         'users/following.html',
         {
             'target_user': target_user,
-            'connection_users': following_users,
-            'connection_type': 'Following'
+            'following_users': following_users
         }
     )
 
 
-def register(request):
+# ============================================================
+# PRIVATE MESSAGES
+# ============================================================
+
+def messages(request):
+
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    sent_to = Message.objects.filter(
+        sender=request.user
+    ).values_list(
+        'receiver_id',
+        flat=True
+    )
+
+    received_from = Message.objects.filter(
+        receiver=request.user
+    ).values_list(
+        'sender_id',
+        flat=True
+    )
+
+    user_ids = set(sent_to) | set(received_from)
+
+    conversation_users = []
+
+    for user_id in user_ids:
+
+        user = User.objects.filter(
+            id=user_id
+        ).first()
+
+        if user is None:
+            continue
+
+        profile, created = UserProfile.objects.get_or_create(
+            user=user
+        )
+
+        last_message = Message.objects.filter(
+            Q(
+                sender=request.user,
+                receiver=user
+            ) |
+            Q(
+                sender=user,
+                receiver=request.user
+            )
+        ).order_by(
+            '-created_at'
+        ).first()
+
+        unread_count = Message.objects.filter(
+            sender=user,
+            receiver=request.user,
+            is_read=False
+        ).count()
+
+        conversation_users.append(
+            {
+                'user': user,
+                'profile': profile,
+                'last_message': last_message,
+                'unread_count': unread_count
+            }
+        )
+
+    conversation_users.sort(
+        key=lambda item: (
+            item['last_message'].created_at
+            if item['last_message']
+            else 0
+        ),
+        reverse=True
+    )
+
+    groups = ChatGroup.objects.filter(
+        members__user=request.user
+    ).prefetch_related(
+        'members__user'
+    ).distinct().order_by(
+        '-created_at'
+    )
+
+    group_conversations = []
+
+    for group in groups:
+
+        last_message = group.messages.order_by(
+            '-created_at'
+        ).first()
+
+        unread_count = group.messages.exclude(
+            sender=request.user
+        ).exclude(
+            read_by__user=request.user
+        ).count()
+
+        group_conversations.append(
+            {
+                'group': group,
+                'last_message': last_message,
+                'unread_count': unread_count
+            }
+        )
+
+    return render(
+        request,
+        'users/messages.html',
+        {
+            'conversation_users': conversation_users,
+            'group_conversations': group_conversations
+        }
+    )
+
+
+def chat(request, username):
+
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    other_user = get_object_or_404(
+        User,
+        username=username
+    )
+
+    if other_user == request.user:
+        return redirect('profile')
+
+    other_profile, created = UserProfile.objects.get_or_create(
+        user=other_user
+    )
 
     if request.method == 'POST':
 
-        form = UserProfileForm(
-            request.POST,
-            request.FILES
+        message_text = request.POST.get(
+            'message',
+            ''
+        ).strip()
+
+        if message_text:
+
+            Message.objects.create(
+                sender=request.user,
+                receiver=other_user,
+                message=message_text
+            )
+
+            Notification.objects.create(
+                recipient=other_user,
+                sender=request.user,
+                notification_type='message',
+                message=(
+                    f'@{request.user.username} '
+                    f'sent you a message'
+                ),
+                target_url=(
+                    f'/messages/{request.user.username}/'
+                )
+            )
+
+        return redirect(
+            'chat',
+            username=username
         )
 
-        if form.is_valid():
+    chat_messages = Message.objects.filter(
+        Q(
+            sender=request.user,
+            receiver=other_user
+        ) |
+        Q(
+            sender=other_user,
+            receiver=request.user
+        )
+    ).select_related(
+        'sender',
+        'receiver'
+    ).order_by(
+        'created_at'
+    )
 
-            username = form.cleaned_data['username']
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password']
+    Message.objects.filter(
+        sender=other_user,
+        receiver=request.user,
+        is_read=False
+    ).update(
+        is_read=True
+    )
 
-            if User.objects.filter(
-                username=username
-            ).exists():
+    return render(
+        request,
+        'users/chat.html',
+        {
+            'other_user': other_user,
+            'other_profile': other_profile,
+            'chat_messages': chat_messages
+        }
+    )
 
-                return render(
-                    request,
-                    'users/register.html',
-                    {
-                        'form': form,
-                        'error': 'Username already exists.'
-                    }
+
+# ============================================================
+# GROUP CHAT
+# ============================================================
+
+def create_group(request):
+
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    if request.method == 'POST':
+
+        group_name = request.POST.get(
+            'name',
+            ''
+        ).strip()
+
+        add_permission = request.POST.get(
+            'add_permission',
+            ChatGroup.ADD_EVERYONE
+        )
+
+        if not group_name:
+            return redirect('create_group')
+
+        if add_permission not in dict(
+            ChatGroup.ADD_PERMISSION_CHOICES
+        ):
+            add_permission = ChatGroup.ADD_EVERYONE
+
+        group = ChatGroup.objects.create(
+            name=group_name,
+            creator=request.user,
+            add_permission=add_permission
+        )
+
+        GroupMember.objects.create(
+            group=group,
+            user=request.user
+        )
+
+        return redirect(
+            'group_chat',
+            group_id=group.id
+        )
+
+    return render(
+        request,
+        'users/create_group.html',
+        {
+            'permission_choices': (
+                ChatGroup.ADD_PERMISSION_CHOICES
+            )
+        }
+    )
+
+
+def group_chat(request, group_id):
+
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    group = get_object_or_404(
+        ChatGroup,
+        id=group_id
+    )
+
+    is_member = GroupMember.objects.filter(
+        group=group,
+        user=request.user
+    ).exists()
+
+    if not is_member:
+        return redirect('messages')
+
+    if request.method == 'POST':
+
+        message_text = request.POST.get(
+            'message',
+            ''
+        ).strip()
+
+        if message_text:
+
+            group_message = GroupMessage.objects.create(
+                group=group,
+                sender=request.user,
+                message=message_text
+            )
+
+            members = GroupMember.objects.filter(
+                group=group
+            ).exclude(
+                user=request.user
+            ).select_related(
+                'user'
+            )
+
+            for member in members:
+
+                Notification.objects.create(
+                    recipient=member.user,
+                    sender=request.user,
+                    notification_type='group_message',
+                    message=(
+                        f'New message in '
+                        f'{group.name}'
+                    ),
+                    target_url=(
+                        f'/messages/group/{group.id}/'
+                    )
                 )
 
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password
-            )
+        return redirect(
+            'group_chat',
+            group_id=group.id
+        )
 
-            profile = form.save(
-                commit=False
-            )
+    group_messages = group.messages.select_related(
+        'sender'
+    ).order_by(
+        'created_at'
+    )
 
-            profile.user = user
-            profile.save()
+    unread_messages = group.messages.exclude(
+        sender=request.user
+    ).exclude(
+        read_by__user=request.user
+    )
+
+    for message in unread_messages:
+
+        GroupMessageRead.objects.get_or_create(
+            message=message,
+            user=request.user
+        )
+
+    members = GroupMember.objects.filter(
+        group=group
+    ).select_related(
+        'user'
+    )
+
+    return render(
+        request,
+        'users/group_chat.html',
+        {
+            'group': group,
+            'group_messages': group_messages,
+            'members': members
+        }
+    )
+
+
+def can_add_to_group(group, user):
+
+    if group.add_permission == ChatGroup.ADD_EVERYONE:
+        return True
+
+    if group.add_permission == ChatGroup.ADD_FOLLOWERS:
+
+        return Follow.objects.filter(
+            follower=user,
+            following=group.creator
+        ).exists()
+
+    if group.add_permission == ChatGroup.ADD_FOLLOWING:
+
+        return Follow.objects.filter(
+            follower=group.creator,
+            following=user
+        ).exists()
+
+    return False
+
+
+def add_group_member(request, group_id, username):
+
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    group = get_object_or_404(
+        ChatGroup,
+        id=group_id
+    )
+
+    target_user = get_object_or_404(
+        User,
+        username=username
+    )
+
+    if not GroupMember.objects.filter(
+        group=group,
+        user=request.user
+    ).exists():
+
+        return redirect(
+            'messages'
+        )
+
+    if GroupMember.objects.filter(
+        group=group,
+        user=target_user
+    ).exists():
+
+        return redirect(
+            'group_chat',
+            group_id=group.id
+        )
+
+    if not can_add_to_group(
+        group,
+        request.user
+    ):
+
+        return redirect(
+            'group_chat',
+            group_id=group.id
+        )
+
+    GroupMember.objects.create(
+        group=group,
+        user=target_user
+    )
+
+    Notification.objects.create(
+        recipient=target_user,
+        sender=request.user,
+        notification_type='group_added',
+        message=(
+            f'@{request.user.username} '
+            f'added you to {group.name}'
+        ),
+        target_url=(
+            f'/messages/group/{group.id}/'
+        )
+    )
+
+    return redirect(
+        'group_chat',
+        group_id=group.id
+    )
+
+
+# ============================================================
+# AUTH
+# ============================================================
+
+def register(request):
+
+    if request.user.is_authenticated:
+        return redirect('profile')
+
+    if request.method == 'POST':
+
+        username = request.POST.get(
+            'username',
+            ''
+        ).strip()
+
+        email = request.POST.get(
+            'email',
+            ''
+        ).strip()
+
+        password = request.POST.get(
+            'password',
+            ''
+        )
+
+        if User.objects.filter(
+            username=username
+        ).exists():
 
             return render(
                 request,
                 'users/register.html',
                 {
-                    'form': UserProfileForm(),
-                    'success': 'Account created successfully!'
+                    'error': 'Username already exists.'
                 }
             )
 
-    else:
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password
+        )
 
-        form = UserProfileForm()
+        UserProfile.objects.create(
+            user=user
+        )
+
+        login(
+            request,
+            user
+        )
+
+        return redirect('profile')
 
     return render(
         request,
-        'users/register.html',
-        {
-            'form': form
-        }
+        'users/register.html'
     )
 
 
 def user_login(request):
 
+    if request.user.is_authenticated:
+        return redirect('profile')
+
     if request.method == 'POST':
 
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get(
+            'username',
+            ''
+        ).strip()
+
+        password = request.POST.get(
+            'password',
+            ''
+        )
 
         user = authenticate(
             request,
@@ -626,7 +1050,7 @@ def user_login(request):
                 user
             )
 
-            return redirect('home')
+            return redirect('profile')
 
         return render(
             request,
@@ -646,6 +1070,4 @@ def user_logout(request):
 
     logout(request)
 
-    return redirect(
-        'home'
-    )
+    return redirect('login')

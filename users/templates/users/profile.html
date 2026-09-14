@@ -33,19 +33,20 @@
 
     <nav>
 
-        <a href="/">
+        <a href="{% url 'home' %}">
             Home
         </a>
 
-        <a href="/explore/">
+        <a href="{% url 'explore' %}">
             Explore
         </a>
 
-        <a href="#">
+        <a href="{% url 'messages' %}">
             Messages
         </a>
 
-        <a href="/notifications/">
+        <a href="{% url 'notifications' %}">
+
             🔔 Notifications
 
             {% if unread_notification_count > 0 %}
@@ -58,11 +59,11 @@
 
         </a>
 
-        <a href="/profile/">
+        <a href="{% url 'profile' %}">
             Profile
         </a>
 
-        <a href="/logout/">
+        <a href="{% url 'logout' %}">
             Logout
         </a>
 
@@ -101,8 +102,6 @@
         </h2>
 
 
-        <!-- PROFILE STATS -->
-
         <div class="profile-stats">
 
             <a
@@ -139,8 +138,6 @@
         </div>
 
 
-        <!-- BIO -->
-
         {% if profile.bio %}
 
             <p>
@@ -155,8 +152,6 @@
 
         {% endif %}
 
-
-        <!-- EDIT PROFILE -->
 
         <div class="profile-actions">
 

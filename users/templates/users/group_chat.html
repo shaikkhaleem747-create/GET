@@ -1,0 +1,224 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        GET - {{ group.name }}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+        GET
+    </div>
+
+    <nav>
+
+        <a href="{% url 'home' %}">
+            Home
+        </a>
+
+        <a href="{% url 'explore' %}">
+            Explore
+        </a>
+
+        <a href="{% url 'messages' %}">
+            Messages
+        </a>
+
+        <a href="{% url 'notifications' %}">
+            🔔 Notifications
+        </a>
+
+        <a href="{% url 'profile' %}">
+            Profile
+        </a>
+
+        <a href="{% url 'logout' %}">
+            Logout
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+    <div class="chat-container">
+
+
+        <div class="chat-header">
+
+            <a
+                href="{% url 'messages' %}"
+                class="chat-back"
+            >
+                ←
+            </a>
+
+
+            <div class="chat-user">
+
+                <div class="group-avatar group-avatar-small">
+                    👥
+                </div>
+
+                <div>
+
+                    <strong>
+                        {{ group.name }}
+                    </strong>
+
+                    <span>
+                        {{ members|length }} members
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="chat-members">
+
+            <strong>
+                Members
+            </strong>
+
+            {% for member in members %}
+
+                <a
+                    href="{% url 'user_profile' member.user.username %}"
+                    class="group-member"
+                >
+                    @{{ member.user.username }}
+                </a>
+
+            {% endfor %}
+
+        </div>
+
+
+        <div class="chat-messages">
+
+            {% for item in group_messages %}
+
+                {% if item.sender == request.user %}
+
+                    <div class="message-row sent">
+
+                        <div class="message-bubble sent-bubble">
+
+                            <small>
+                                @{{ item.sender.username }}
+                            </small>
+
+                            <p>
+                                {{ item.message }}
+                            </p>
+
+                            <small>
+                                {{ item.created_at|date:"h:i A" }}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="message-row received">
+
+                        <div class="message-bubble received-bubble">
+
+                            <small>
+                                @{{ item.sender.username }}
+                            </small>
+
+                            <p>
+                                {{ item.message }}
+                            </p>
+
+                            <small>
+                                {{ item.created_at|date:"h:i A" }}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            {% empty %}
+
+                <div class="empty-chat">
+
+                    <div class="empty-message-icon">
+                        👥
+                    </div>
+
+                    <h2>
+                        Start the group conversation
+                    </h2>
+
+                    <p>
+                        Send the first message.
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <form
+            method="POST"
+            class="chat-input-form"
+        >
+
+            {% csrf_token %}
+
+            <input
+                type="text"
+                name="message"
+                placeholder="Message {{ group.name }}..."
+                maxlength="2000"
+                autocomplete="off"
+                required
+            >
+
+            <button type="submit">
+                Send
+            </button>
+
+        </form>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>
